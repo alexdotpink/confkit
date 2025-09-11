@@ -47,8 +47,27 @@ export async function generateMetadata(
     notFound();
   }
 
+  const title = page.data.title;
+  const description = page.data.description ?? 'Type‑safe config. Secure secrets.';
+
+  // With metadataBase set, a relative URL here becomes absolute
+  const ogUrl = `/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(
+    description
+  )}`;
+
   return {
-    title: page.data.title,
-    description: page.data.description,
+    title,
+    description,
+    openGraph: {
+      images: [ogUrl],
+      title,
+      description,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogUrl],
+    },
   };
 }
