@@ -38,7 +38,7 @@ npx confkit scan --dir src --allow NODE_ENV,VERCEL_ENV
 - `dev` — Watch sources and diff on change
   - Controls: `r` reload, `s` toggle redaction, `c` copy invalid paths to clipboard
   - `--watch a,b,c` — add additional globs/paths to watch
-- `init` — Scaffold `conf/config.ts`, `.env.example`, and a GitHub Action workflow (includes `confkit check` and `confkit scan`)
+- `init` — Scaffold `conf/config.ts`, generate `.env.example` from your schema, and add a GitHub Action workflow (includes `confkit check` and `confkit scan`)
 - `explain` — Show where values come from; use `--key <name>` to filter
 - `doctor` — Basic environment checks and production warnings
 - `types` — Generate a `confkit-env.d.ts` declaring client modules with concrete keys as strings (`@confkit/next/client` and `confkit:client`)
