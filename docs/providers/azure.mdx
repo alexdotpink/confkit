@@ -1,0 +1,49 @@
+---
+title: Azure Key Vault
+description: Pull secrets from Azure Key Vault with caching and rotation callbacks.
+---
+
+## Install
+
+```bash
+pnpm add @confkit/azure
+```
+
+## Usage
+
+```ts title="conf/config.ts"
+import { defineConfig, s } from 'confkit';
+import { azureKeyVaultSource } from '@confkit/azure';
+
+export const config = defineConfig({
+  sources: [azureKeyVaultSource({ vaultUrl: 'https://my-vault.vault.azure.net' })],
+  schema: { DATABASE_URL: s.string(), STRIPE_SECRET: s.secret(s.string()) },
+});
+```
+
+## Options
+
+- `vaultUrl: string` — Key Vault URL (required)
+- `credential?: TokenCredential` — custom credential (defaults to `DefaultAzureCredential`)
+- `namePrefix?: string` — include secrets whose names start with prefix
+- `mapNameToKey?: (name) => string` — convert secret name → key
+- `ttlMs?`, `jitter?`, `background?`, `onRotate?`
+- `maxConcurrency?: number` — concurrent `getSecret` calls
+
+## Implementation Notes
+
+- Paginates `listPropertiesOfSecrets` then fetches latest value per secret
+- Detects per‑key rotation using Key Vault’s version property
+
+## IAM / RBAC
+
+Assign the app or managed identity a role that can read secrets, for example "Key Vault Secrets User" on the target vault:
+
+```bash
+VAULT=my-vault
+PRINCIPAL_ID=<app-or-mi-object-id>
+az role assignment create \
+  --role "Key Vault Secrets User" \
+  --assignee $PRINCIPAL_ID \
+  --scope $(az keyvault show -n $VAULT -o tsv --query id)
+```

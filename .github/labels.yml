@@ -1,0 +1,20 @@
+- name: bug
+  color: d73a4a
+  description: Something isn’t working
+
+- name: feat
+  color: a2eeef
+  description: New feature or enhancement
+
+- name: provider
+  color: 6f42c1
+  description: Relates to a provider package (aws, azure, gcp, doppler, 1password, …)
+
+- name: docs
+  color: 0075ca
+  description: Documentation updates
+
+- name: good first issue
+  color: 7057ff
+  description: Good for newcomers
+

@@ -1,0 +1,26 @@
+---
+title: Troubleshooting
+description: Common issues and quick fixes.
+---
+
+## Validation fails but I can’t see why
+
+- Run `npx confkit print --json` to inspect the (redacted) structure
+- Use Next or Vite overlay integration to see annotated paths
+- Add `.default(...)` to required fields during local dev if needed
+
+## `.env` files not loading in production
+
+- This is by design for safety. Set `ALLOW_ENV_FILES_IN_PROD=true` to override (e.g., for containers that bake `.env`). Prefer cloud secret stores for production.
+
+## `config.PORT` throws “Access before await config.ready()`”
+
+- That proxy guards accidental access. Use `const env = await config.ready(); env.PORT`, or `await config.get('PORT')`.
+
+## Client env missing keys
+
+- Only `.client()` keys (or those with accepted prefixes) are included. Check your `clientPrefix(es)` and `requireClientPrefix` settings.
+
+## Type checks not matching runtime behavior
+
+- The compiler infers types from your schema, but runtime coercion still applies. Validate shapes and use `.refine()` where needed.

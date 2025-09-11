@@ -1,0 +1,66 @@
+---
+title: CLI
+description: Validate, print, and watch configuration in dev and CI.
+---
+
+The `confkit` CLI validates, prints, watches, scaffolds, and explains your configuration.
+
+## Quick Reference
+
+```bash
+npx confkit help
+npx confkit check --file conf/config.ts --env production
+npx confkit print --file conf/config.ts --json
+npx confkit diff --from-env development --to-env production
+npx confkit diff --from-source env --to-source file:config.yaml --matrix
+npx confkit dev --file conf/config.ts
+npx confkit init
+npx confkit explain --key DATABASE_URL
+npx confkit types --out confkit-env.d.ts
+npx confkit types --server --out confkit-env-server.d.ts
+npx confkit types --watch
+npx confkit scan --dir src --allow NODE_ENV,VERCEL_ENV
+```
+
+## Commands
+
+- `check` — Validate and print a summary table; exits non‑zero on failure
+  - `--strict` — also fail if unknown keys (not in the schema) are present
+- `print` — Print values (redacted by default)
+  - `--json` — print raw JSON
+  - `--no-redact` — disable redaction (dangerous; avoid committing)
+- `diff` — Compare two environments or two sources
+  - Environments: `--from-env <a> --to-env <b>` (respects `.env*` resolution per `NODE_ENV`)
+  - Sources: `--from-source <name> --to-source <name>` (matches by substring of source name; e.g. `env`, `file:config.yaml`)
+  - `--matrix` — print a matrix `Key | A | B | Status`
+  - `--json` — output structured diff `{ added, removed, changed }`
+  - `--no-redact` — disable redaction (env‑diff only; source‑diff shows raw source values)
+- `dev` — Watch sources and diff on change
+  - Controls: `r` reload, `s` toggle redaction, `c` copy invalid paths to clipboard
+  - `--watch a,b,c` — add additional globs/paths to watch
+- `init` — Scaffold `conf/config.ts`, `.env.example`, and a GitHub Action workflow (includes `confkit check` and `confkit scan`)
+- `explain` — Show where values come from; use `--key <name>` to filter
+- `doctor` — Basic environment checks and production warnings
+- `types` — Generate a `confkit-env.d.ts` declaring client modules with concrete keys as strings (`@confkit/next/client` and `confkit:client`)
+  - `--server` — generate a server-side `ConfkitEnv` interface inferred from your schema
+  - `--watch` — regenerate on changes to config/env files
+- `scan` — Scan your code for `process.env.*` / `import.meta.env.*` usages and compare to the schema
+  - prints unknown keys used in code (not declared) and schema keys unused in code
+  - `--dir <path>` — root directory to scan (default CWD)
+  - `--allow <keys>` — comma-separated keys to ignore (e.g. `NODE_ENV`)
+
+## Common Flags
+
+- `--file <path>` — config file (default `conf/config.ts`)
+- `--env <name>` — set `NODE_ENV` before loading
+
+```text title="Sample output (print)"
++---------------------------+---------------------------+
+| Key                       | Value                     |
++---------------------------+---------------------------+
+| DATABASE_URL              | •••                       |
+| FEATURES.abTestVariant    | "A"                      |
+| NODE_ENV                  | "development"            |
+| PORT                      | 3000                      |
++---------------------------+---------------------------+
+```

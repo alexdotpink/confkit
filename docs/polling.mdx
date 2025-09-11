@@ -1,0 +1,32 @@
+---
+title: Polling & Webhooks
+description: Detect config changes and trigger callbacks or webhooks with backoff.
+---
+
+Use `pollConfig` to periodically snapshot your configuration (optionally redacted), apply exponential backoff when nothing changes, and fire callbacks or webhooks when values do change.
+
+```ts title="poll.ts"
+import { pollConfig } from 'confkit/poll';
+import { config } from '../conf/config';
+
+const ac = new AbortController();
+
+pollConfig(await (async () => config)(), {
+  intervalMs: 5000,
+  maxIntervalMs: 60000,
+  backoffFactor: 1.5,
+  redact: true,
+  onChange: (next, prev) => {
+    console.log('config changed');
+  },
+  webhook: { url: 'https://example.com/hook', headers: { Authorization: 'Bearer ...' } },
+  etagSupplier: () => process.env.CONFIG_VERSION,
+  signal: ac.signal,
+});
+
+// Later: ac.abort();
+```
+
+<Callout title="Etag supplier">
+  Provide <code>etagSupplier</code> to short‑circuit change detection if you expose an external config version (e.g., from your deploy system). If both JSON and ETag are unchanged, the backoff increases up to <code>maxIntervalMs</code>.
+</Callout>

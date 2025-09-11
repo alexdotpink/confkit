@@ -1,0 +1,11 @@
+{
+  "title": "Integrations",
+  "pages": [
+    "next",
+    "vite",
+    "expo",
+    "..."
+  ],
+  "defaultOpen": true
+}
+

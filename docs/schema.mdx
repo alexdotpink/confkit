@@ -1,0 +1,100 @@
+---
+title: Schema
+description: Small, focused helpers that coerce, validate, and infer types.
+---
+
+Confkit’s schema is intentionally tiny but expressive for configuration needs. Every helper:
+
+- Coerces from untyped input (env/file/cloud) into a typed value
+- Validates at runtime and reports precise issues
+- Carries metadata for redaction and client exposure
+
+## Primitives
+
+- `s.string()` — strings
+- `s.int()` — integers (coerces from strings like `"42"`)
+- `s.number()` / `s.float()` — numbers (finite)
+- `s.boolean()` — booleans (accepts `"true"|"false"`)
+- `s.enum([...])` — one of a fixed set of strings
+- `s.url()` — absolute URL string; `.origin()` to extract origin
+- `s.uuid()` — UUID (RFC 4122)
+- `s.uuid()` — UUID (RFC 4122)
+- `s.port()` — TCP port 1–65535
+- `s.email()` — simple email format check
+- `s.duration()` — human/ISO8601 duration to milliseconds (`500ms`, `2s`, `5m`, `PT1H`)
+- `s.nonempty()` — non-empty string
+- `s.regex(re, label?)` — string matching a pattern (label used in error)
+- `s.host()` — rough hostname validation
+- `s.ip()` — simple IPv4/IPv6 validation
+- `s.json([inner])` — parse JSON strings; optionally validate with `inner`
+
+## Structured
+
+- `s.object({ ... })` — nested object; redaction follows schema shape
+- `s.array(inner)` — arrays of `inner`
+- `s.record(inner)` — record of string keys to `inner`
+- `s.union([a,b,...])` — first branch that validates wins
+
+## Modifiers
+
+- `.optional()` — allow `undefined`
+- `.default(v)` — default when `undefined`
+  - also accepts a function: `.default(() => 3000)`
+- `.client()` — mark safe for client bundle exposure
+- `.refine(predicate, message)` — additional invariant after coercion
+- `.transform(fn)` — map to a new value after validation
+- `s.secret(inner)` — mark as secret (masked when redacting; auditable on access)
+
+<Callout title="Tip: Deep Redaction">
+  Redaction respects your schema shape all the way down: arrays, objects, records, and unions are redacted by their child schemas. Structure in, structure out — just safer.
+</Callout>
+
+## Example
+
+```ts title="Schema example"
+import { s } from 'confkit';
+
+const schema = {
+  PORT: s.port().default(8080),
+  BASE_URL: s.url(),
+  ADMIN_EMAILS: s.array(s.email()).default([]),
+  DB: s.object({
+    HOST: s.string(),
+    POOL: s.object({ min: s.int().default(1), max: s.int().default(10) }),
+    SSL: s.boolean().default(false),
+  }),
+  STRIPE_SECRET: s.secret(s.string()),
+};
+```
+
+## Using the Schema
+
+- `const env = await config.ready(); env.PORT` — typed object access
+- `await config.get('PORT')` — typed single value
+- `await config.toJSON({ redact: true })` — secrets masked with `•••`
+- `await config.pickClient()` — only `.client()` keys (and/or accepted prefixes)
+- `config.describeSchema()` — structured description useful for tooling
+
+## Cross-field Validation
+
+Provide additional invariants across multiple keys via `validate` on `defineConfig`.
+
+```ts
+export const config = defineConfig({
+  sources: [/* ... */],
+  schema: { A: s.int(), B: s.int() },
+  validate: (env) => {
+    const issues: Array<{ path: string; message: string }> = [];
+    if (env.A > env.B) issues.push({ path: 'A', message: 'A must be <= B' });
+    return issues;
+  },
+});
+```
+
+## Client Exposure
+
+`defineConfig` accepts `clientPrefix(es)` and `requireClientPrefix`. By default, keys marked `.client()` or keys starting with one of `PUBLIC_`, `NEXT_PUBLIC_`, `EXPO_PUBLIC_` are included by `pickClient()`. In production, Confkit enforces that `.client()` keys also match a configured prefix unless you override `requireClientPrefix`.
+
+<Callout title="Enforce a prefix" type="warning">
+  Set <code>requireClientPrefix: true</code> and choose <code>clientPrefix(es)</code> to forbid accidental exposure of non‑prefixed keys.
+</Callout>

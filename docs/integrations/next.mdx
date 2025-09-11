@@ -1,0 +1,191 @@
+---
+title: Next.js
+description: Type-safe config for Next.js — inject safe client env, validate in dev, show errors in the overlay, and read config in Server Components and Route Handlers.
+---
+
+This guide covers a complete, ergonomic setup for Next.js (App Router and Pages Router). A working example lives at `examples/nextjs` in the repo.
+
+<Callout title="TL;DR" type="success">
+  Use <code>@confkit/next</code> to merge safe client env into <code>next.config</code>, enable a zero‑boilerplate dev overlay, and import <code>@confkit/next/client</code> for client env (works in Turbopack and Webpack). The Vite‑style <code>confkit:client</code> alias is still supported in Webpack builds.
+</Callout>
+
+<Steps>
+  <Step>
+    <strong>Install</strong>
+
+    <Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+      <Tab>
+        ```bash
+        pnpm add confkit @confkit/next
+        ```
+      </Tab>
+      <Tab>
+        ```bash
+        npm i confkit @confkit/next
+        ```
+      </Tab>
+      <Tab>
+        ```bash
+        yarn add confkit @confkit/next
+        ```
+      </Tab>
+      <Tab>
+        ```bash
+        bun add confkit @confkit/next
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    <strong>Define your config</strong>
+
+```ts title="conf/config.ts"
+import { defineConfig, s, source } from 'confkit';
+
+export const config = defineConfig({
+  sources: [source().env(), source().file('config.yaml')],
+  schema: {
+    NODE_ENV: s.enum(['development','test','production']).default('development'),
+    DATABASE_URL: s.url(),
+    NEXT_PUBLIC_APP_NAME: s.string().client().default('Confkit Next'),
+    NEXT_PUBLIC_FEATURE_FLAG: s.boolean().client().default(false),
+  },
+});
+```
+  </Step>
+
+  <Step>
+    <strong>Wire Next config</strong>
+
+```ts title="next.config.ts"
+import { defineNextConfig } from '@confkit/next';
+export default defineNextConfig();
+```
+
+Pass a custom path if needed:
+
+```ts
+export default defineNextConfig({ file: './conf/config.ts' });
+```
+
+  </Step>
+
+  <Step>
+    <strong>Validate in dev (optional)</strong>
+
+Prefer the dev overlay for validation feedback. If you want to fail fast at boot, enable strict validation in config:
+
+```ts
+import { defineNextConfig } from '@confkit/next';
+export default defineNextConfig({ ensure: true });
+```
+  </Step>
+</Steps>
+
+What the wrapper does:
+
+- Merges Confkit’s safe client env (only `.client()` keys and well‑known prefixes) into `next.config.env`.
+- Adds a Webpack alias + loader so `import 'confkit:client'` works in Next
+- In development, validates your config at build time and surfaces readable errors in Next’s overlay.
+
+## Using config in Next.js
+
+- Server Components: import your config and `await config.ready()`.
+- Route Handlers / API routes: same as above (set `export const runtime = 'nodejs'`).
+- Client Components: don’t import the server config; read injected env via `process.env.NEXT_PUBLIC_...`.
+
+```tsx title="app/page.tsx (Server Component)"
+import config from './conf/config';
+
+export default async function Page() {
+  const env = await config.ready();
+  return <pre>{JSON.stringify(env, null, 2)}</pre>;
+}
+```
+
+```ts title="app/api/config/route.ts (Route Handler)"
+import config from '../../conf/config';
+export const runtime = 'nodejs';
+export async function GET() {
+  const redacted = await config.toJSON({ redact: true });
+  return Response.json({ redacted });
+}
+```
+
+```tsx title="app/env/page.tsx (Client Component) — two options"
+'use client';
+
+// Option A: process.env (Next injects from next.config)
+function FromProcessEnv() {
+  return (
+    <>
+      <div>App Name: {process.env.NEXT_PUBLIC_APP_NAME}</div>
+      <div>Flag: {String(process.env.NEXT_PUBLIC_FEATURE_FLAG)}</div>
+    </>
+  );
+}
+
+// Option B: client module (typed via `confkit types`)
+// Preferred for Next.js; works with Turbopack and Webpack
+import env from '@confkit/next/client';
+function FromVirtualModule() {
+  return (
+    <>
+      <div>App Name: {env.NEXT_PUBLIC_APP_NAME}</div>
+      <div>Flag: {String(env.NEXT_PUBLIC_FEATURE_FLAG)}</div>
+    </>
+  );
+}
+
+export default function ClientEnv() {
+  return (
+    <>
+      <FromProcessEnv />
+      <FromVirtualModule />
+    </>
+  );
+}
+```
+
+## Client env rules
+
+- Included: keys marked `.client()` or named with `PUBLIC_`, `NEXT_PUBLIC_`, or `EXPO_PUBLIC_`.
+- Excluded: everything else (secrets, server‑only values).
+- Customize: set `clientPrefix`/`clientPrefixes` or `requireClientPrefix` in `defineConfig`.
+
+## Edge runtime
+
+Confkit uses Node APIs to load/validate TypeScript configs. Use the Node.js runtime for middleware and route handlers that touch Confkit: `export const runtime = 'nodejs'`.
+
+## Middleware
+
+Validate early in development or fail fast in production using a small middleware wrapper:
+
+```ts title="middleware.ts"
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { middlewareEnsureConfkit } from '@confkit/next';
+
+export default async function middleware(_req: NextRequest) {
+  const res = await middlewareEnsureConfkit({ /* file: './conf/config.ts' */ });
+  return res ?? NextResponse.next();
+}
+```
+
+## Turbopack and Webpack
+
+- Recommended import for client env: <code>@confkit/next/client</code> (no bundler config needed).
+- The Vite‑style alias <code>confkit:client</code> is supported when using Webpack via the Next plugin wrapper; Turbopack does not use Webpack loaders.
+- The Confkit dev overlay uses a Webpack loader. With Turbopack, prefer enabling <code>ensure</code> to fail fast or rely on console errors from server components.
+
+## Troubleshooting
+
+- Overlay shows an error but build continues: this is expected — the loader emits an error for the overlay panel without stopping the build. Fix the issues and it clears.
+- Client env missing: ensure your key is `.client()` or matches one of the allowed prefixes, and that you wrapped `next.config` with `withConfkit(...)`.
+- TypeScript for client env: run `confkit types` to generate `confkit-env.d.ts` — it includes declarations for both `@confkit/next/client` and `confkit:client`.
+- TypeScript config not picked up: check the `file` path you pass; default is `./conf/config.ts` from CWD.
+
+## Complete example
+
+See `examples/nextjs` for a ready‑to‑run app demonstrating all of the above.

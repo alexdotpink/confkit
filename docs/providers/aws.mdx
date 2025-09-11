@@ -1,0 +1,62 @@
+---
+title: AWS Secrets Manager
+description: Pull secrets from AWS Secrets Manager with caching and rotation callbacks.
+---
+
+## Install
+
+```bash
+pnpm add @confkit/aws
+```
+
+## Usage
+
+```ts title="conf/config.ts"
+import { defineConfig, s } from 'confkit';
+import { awsSecretsSource } from '@confkit/aws';
+
+export const config = defineConfig({
+  sources: [awsSecretsSource({ namePrefix: '/apps/myapp/' })],
+  schema: { DATABASE_URL: s.string(), STRIPE_SECRET: s.secret(s.string()) },
+});
+```
+
+## Options
+
+- `region?: string` — AWS region (falls back to AWS SDK defaults)
+- `namePrefix?: string` — filter secrets whose names start with this prefix
+- `mapNameToKey?: (name) => string` — convert name → key (default: last path segment, upper‑snake)
+- `ttlMs?: number` — cache TTL before refresh (default 5 min)
+- `jitter?: number` — ± jitter factor for refresh (default 0.1)
+- `background?: boolean` — schedule background refresh using TTL
+- `onRotate?: (key, value, meta) => void` — receive per‑key rotation events
+- `maxAttempts?: number` — AWS SDK retry attempts (default 3)
+- `retryMode?: 'standard'|'adaptive'` — retry mode (default adaptive)
+- `maxConcurrency?: number` — concurrency for `GetSecretValue` when batch is unavailable
+
+## Behavior
+
+- Uses batch gets when supported, otherwise falls back to individual gets with limited concurrency
+- Detects per‑key rotation by comparing values and version IDs; calls `onRotate`
+- Caches values and schedules next refresh with jitter to avoid thundering herds
+
+## IAM Policy Example
+
+Grant minimum Secrets Manager permissions:
+
+```json title="AWS IAM policy"
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:ListSecrets",
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:BatchGetSecretValue"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```

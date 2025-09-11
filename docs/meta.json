@@ -1,0 +1,27 @@
+{
+  "title": "Docs",
+  "pages": [
+    "overview",
+    "quickstart",
+    "schema",
+    "sources",
+    "expansion",
+    "polling",
+    "cli",
+    "security",
+    "troubleshooting",
+    "faq",
+    "---Integrations---",
+    "integrations/next",
+    "integrations/vite",
+    "integrations/expo",
+    "---Providers---",
+    "providers/aws",
+    "providers/gcp",
+    "providers/azure",
+    "providers/doppler",
+    "providers/1password"
+  ],
+  "defaultOpen": true
+}
+

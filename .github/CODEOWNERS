@@ -1,0 +1,24 @@
+# Code owners and review routing
+#
+# Lines starting with '#' are comments. Patterns follow gitignore syntax.
+# Learn more: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner(s) for everything in the repo
+* @alexdotpink
+
+# Example: assign specific owners for provider packages
+# Uncomment and adjust to route reviews to maintainers/teams.
+# /packages/confkit-aws/      @alexdotpink
+# /packages/confkit-azure/    @alexdotpink
+# /packages/confkit-gcp/      @alexdotpink
+# /packages/confkit-doppler/  @alexdotpink
+# /packages/confkit-1password/ @alexdotpink
+# /packages/confkit-next/     @alexdotpink
+# /packages/confkit-vite/     @alexdotpink
+# /packages/confkit-expo/     @alexdotpink
+# /packages/confkit/          @alexdotpink
+
+# You can also use organization teams, e.g.:
+# /packages/confkit-aws/      @your-org/aws-maintainers
+# /packages/confkit-azure/    @your-org/azure-maintainers
+

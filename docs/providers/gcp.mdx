@@ -1,0 +1,45 @@
+---
+title: GCP Secret Manager
+description: Pull secrets from Google Secret Manager with caching and rotation callbacks.
+---
+
+## Install
+
+```bash
+pnpm add @confkit/gcp
+```
+
+## Usage
+
+```ts title="conf/config.ts"
+import { defineConfig, s } from 'confkit';
+import { gcpSecretsSource } from '@confkit/gcp';
+
+export const config = defineConfig({
+  sources: [gcpSecretsSource({ projectId: 'my-project', namePrefix: 'myapp_' })],
+  schema: { DATABASE_URL: s.string(), STRIPE_SECRET: s.secret(s.string()) },
+});
+```
+
+## Options
+
+- `projectId?: string` — explicit project; falls back to SDK default if omitted
+- `namePrefix?: string` — include only secrets whose short name starts with prefix
+- `mapNameToKey?: (name) => string` — map resource name → key (default: basename upper‑snake)
+- `ttlMs?`, `jitter?`, `background?`, `onRotate?`
+- `maxConcurrency?: number` — concurrent `accessSecretVersion` calls
+
+## Implementation Notes
+
+- Lists secrets in the project then accesses `versions/latest` per secret with limited concurrency
+- Detects per‑key rotation via version resource names
+
+## IAM Roles
+
+Grant your service account `roles/secretmanager.secretAccessor` on the project (or specific secrets). Example gcloud:
+
+```bash
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member=serviceAccount:$SA \
+  --role=roles/secretmanager.secretAccessor
+```

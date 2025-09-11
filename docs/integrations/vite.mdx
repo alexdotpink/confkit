@@ -1,0 +1,40 @@
+---
+title: Vite
+description: Inject safe client env and surface validation errors in the overlay.
+---
+
+Use the `@confkit/vite` plugin to inject safe client environment variables and validate on file changes.
+
+## Install
+
+```bash
+pnpm add @confkit/vite
+```
+
+## Configure
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite';
+import confkit from '@confkit/vite';
+
+export default defineConfig({
+  plugins: [confkit({ file: './conf/config.ts' })],
+});
+```
+
+## What It Does
+
+- Computes `clientEnv` using `confkit/load` and sets `define['process.env.KEY'] = JSON.stringify(value)`
+- Validates on server start and on watched file changes
+- Sends a readable error into Vite’s overlay when validation fails
+
+### Virtual Module
+
+Import a pre-baked client env object via a virtual module:
+
+```ts
+import env from 'confkit:client';
+console.log(env.PUBLIC_APP_NAME);
+```
+
+API: `confkitVite({ file?: string })`

@@ -1,0 +1,54 @@
+{
+  "name": "config",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexdotpink/confkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alexdotpink/confkit/issues"
+  },
+  "homepage": "https://github.com/alexdotpink/confkit#readme",
+  "scripts": {
+    "build": "turbo run build --filter=@confkit/* --filter=confkit",
+    "build:packages": "turbo run build --filter=@confkit/* --filter=confkit",
+    "build:docs": "turbo run build --filter=docs",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types",
+    "docs": "turbo run dev --filter=docs",
+    "docs:build": "turbo run build --filter=docs",
+    "test": "turbo run test",
+    "test:packages": "turbo run test --filter=@confkit/* --filter=confkit",
+    "test:watch": "turbo run test:watch",
+    "coverage": "turbo run coverage",
+    "size": "turbo run size",
+    "changeset": "changeset",
+    "release:version": "changeset version",
+    "release:publish": "changeset publish --provenance",
+    "release:publish:next": "changeset publish --tag next --provenance",
+    "release:publish:beta": "changeset publish --tag beta --provenance"
+  },
+  "devDependencies": {
+    "size-limit": "^11.1.6",
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.6",
+    "typescript": "5.9.2",
+    "tsup": "^8.2.4",
+    "vitest": "^2.1.5",
+    "@vitest/coverage-v8": "^2.1.5",
+    "@changesets/cli": "^2.27.9"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "funding": { "type": "github", "url": "https://github.com/sponsors/alexdotpink" },
+  "packageManager": "bun@1.2.20",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "examples/*"
+  ]
+}

@@ -1,0 +1,74 @@
+---
+title: Overview
+description: Type-safe config. Secure secrets. One import.
+---
+
+Confkit is a tiny, framework‑agnostic runtime for type‑safe configuration and secrets in TypeScript/JavaScript apps. It gives you a single source of truth for configuration, strong types at compile time, validation at runtime, and safe exposure of public values to the client.
+
+<Callout title="Why Confkit?">
+  Most teams re‑invent config handling several times: a schema here, some env parsing there, ad‑hoc redaction, hand‑rolled client env injection… Confkit wraps these concerns into a focused, minimal toolkit that works on Node, serverless, edge, Next.js, Vite and Expo.
+  
+  One import. Clear layering. First‑class DX.
+  
+  <br />
+  <strong>Install, define your schema, ship.</strong>
+  
+  </Callout>
+
+## What You Get
+
+- End‑to‑end types from a single schema
+- Multiple sources with explicit layering (env, files, cloud secret stores)
+- Runtime validation and deep redaction of secrets
+- Explicit client exposure for public values
+- CLI + framework plugins for fast feedback (Next, Vite, Expo)
+
+## How It Works
+
+Define a schema and layer your sources; Confkit validates and returns a typed object at runtime.
+
+```ts title="conf/config.ts"
+import { defineConfig, s, source } from 'confkit';
+
+export const config = defineConfig({
+  sources: [
+    source().env(),                 // process.env + .env* (in dev)
+    source().file('config.yaml'),   // json/yaml/toml by extension
+  ],
+  schema: {
+    NODE_ENV: s.enum(['development','test','production']).default('development'),
+    PORT: s.port().default(3000),
+    DATABASE_URL: s.url(),
+    PUBLIC_APP_NAME: s.string().client().default('confkit'),
+    STRIPE_SECRET: s.secret(s.string()),
+  },
+});
+```
+
+```ts title="Use it at startup"
+import { config } from './conf/config';
+
+const env = await config.ready();
+console.log('Listening on', env.PORT);
+```
+
+<Files>
+  <Folder name="project" defaultOpen>
+    <File name="conf/config.ts" />
+    <File name=".env" />
+    <File name="config.yaml" />
+    <File name="src/server.ts" />
+  </Folder>
+  
+</Files>
+
+## Packages
+
+- `confkit`: Core runtime, CLI, loader, utilities
+- `@confkit/next`: Next.js helpers and dev overlay integration
+- `@confkit/vite`: Vite plugin to inject client env and live‑validate
+- `@confkit/aws`, `@confkit/gcp`, `@confkit/azure`, `@confkit/doppler`, `@confkit/1password`: cloud providers returning Confkit sources
+
+<Callout title="Start Here" type="info">
+  New to Confkit? Jump to the <a href="/docs/quickstart">Quick Start</a>, then read <a href="/docs/schema">Schema</a> and <a href="/docs/sources">Sources & Layering</a>.
+</Callout>
