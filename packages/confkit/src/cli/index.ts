@@ -89,6 +89,7 @@ async function run() {
   const env = typeof flags.env === 'string' ? String(flags.env) : undefined;
   if (env) process.env.NODE_ENV = env;
 
+  // Handle help early
   if (cmd === 'help' || flags.help) {
     console.log(`
 confkit <command> [--file conf/config.ts] [--env production]
@@ -98,7 +99,7 @@ Commands:
   print         Print config (redacted by default)
   diff          Compare two envs or two sources
   dev           Watch and diff config changes locally
-  init          Scaffold conf/config.ts and .env.example
+  init          Scaffold conf/config.ts and .env.example (from schema)
   explain       Show where values come from (use --key to filter)
   doctor        Run basic environment checks
   types         Generate types for 'confkit:client' virtual module
@@ -127,6 +128,98 @@ Dev controls:
   s: toggle redaction on/off
   c: copy invalid paths to clipboard when validation fails
 `);
+    return;
+  }
+
+  // Special-case init so it works before a config exists.
+  if (cmd === 'init') {
+    const confDir = path.resolve(process.cwd(), 'conf');
+    const confFile = path.join(confDir, 'config.ts');
+    const envExample = path.resolve(process.cwd(), '.env.example');
+    const workflowDir = path.resolve(process.cwd(), '.github/workflows');
+    const workflowFile = path.join(workflowDir, 'confkit.yml');
+    if (!fs.existsSync(confDir)) fs.mkdirSync(confDir, { recursive: true });
+    if (!fs.existsSync(confFile)) {
+      const content = `import { defineConfig, s, source } from 'confkit';
+
+export const config = defineConfig({
+  sources: [source().env(), source().file('config.json')],
+  schema: {
+    NODE_ENV: s.enum(['development','test','production']).default('development'),
+    PORT: s.port().default(3000),
+    DATABASE_URL: s.string(),
+    PUBLIC_APP_NAME: s.string().client().default('confkit'),
+    STRIPE_SECRET: s.secret(s.string()),
+  },
+});
+`;
+      fs.writeFileSync(confFile, content, 'utf8');
+      console.log('✔ Created', path.relative(process.cwd(), confFile));
+    } else {
+      console.log('• Exists', path.relative(process.cwd(), confFile));
+    }
+
+    // Generate .env.example from schema (best-effort). Prefer --file when provided.
+    if (!fs.existsSync(envExample)) {
+      let desc: Record<string, any> | undefined;
+      const targetFile = file ?? confFile;
+      try {
+        const loaded = await loadConfig({ file: targetFile, computeClientEnv: false });
+        if (typeof (loaded.config as any).describeSchema === 'function') {
+          desc = (loaded.config as any).describeSchema() as Record<string, any>;
+        }
+      } catch {
+        // Ignore load errors; we'll fall back to a tiny template
+      }
+      function exampleFor(key: string, node: any): string {
+        const kind = node?.kind ?? 'string';
+        if (kind === 'enum') return String((node?.values?.[0] ?? ''));
+        if (kind === 'port') return '3000';
+        if (kind === 'boolean') return 'false';
+        if (kind === 'url') return 'http://localhost:3000';
+        if (kind === 'email') return 'admin@example.com';
+        if (kind === 'json') return '{}';
+        if (kind === 'number' || kind === 'int' || kind === 'float') return '0';
+        // Secrets: leave blank intentionally
+        if (node?.secret) return '';
+        // Sensible defaults for known keys
+        if (key === 'NODE_ENV') return 'development';
+        if (key === 'PUBLIC_APP_NAME') return 'confkit';
+        return '';
+      }
+      const lines: string[] = [];
+      lines.push('# Example env — generated from your Confkit schema');
+      if (desc && Object.keys(desc).length) {
+        const keys = Object.keys(desc).sort();
+        for (const k of keys) {
+          const node = (desc as Record<string, any>)[k];
+          // Only emit top-level scalar-like nodes; for structures, emit a blank placeholder
+          const val = exampleFor(k, node);
+          if (node?.kind && ['object', 'array', 'record', 'union'].includes(String(node.kind))) {
+            lines.push(`# ${k}: ${node.kind} — provide JSON if using env`);
+          }
+          if (node?.secret) lines.push(`# ${k} is marked secret`);
+          lines.push(`${k}=${val}`);
+        }
+      } else {
+        // Fallback minimal template if schema unavailable
+        lines.push('NODE_ENV=development');
+        lines.push('PORT=3000');
+      }
+      fs.writeFileSync(envExample, lines.join('\n') + '\n', 'utf8');
+      console.log('✔ Created', path.relative(process.cwd(), envExample));
+    } else {
+      console.log('• Exists', path.relative(process.cwd(), envExample));
+    }
+
+    if (!fs.existsSync(workflowDir)) fs.mkdirSync(workflowDir, { recursive: true });
+    if (!fs.existsSync(workflowFile)) {
+      const content = `name: confkit\n on: [push, pull_request]\n jobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: '20' }\n      - run: npm ci\n      - run: npx confkit check --env production\n      - run: npx confkit scan --dir .\n`;
+      fs.writeFileSync(workflowFile, content, 'utf8');
+      console.log('✔ Created', path.relative(process.cwd(), workflowFile));
+    } else {
+      console.log('• Exists', path.relative(process.cwd(), workflowFile));
+    }
     return;
   }
 
