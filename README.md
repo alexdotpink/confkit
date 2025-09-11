@@ -1,5 +1,9 @@
 # confkit
 
+[![npm version](https://img.shields.io/npm/v/confkit.svg)](https://www.npmjs.com/package/confkit)
+[![npm downloads](https://img.shields.io/npm/dm/confkit.svg)](https://www.npmjs.com/package/confkit)
+[![GitHub stars](https://img.shields.io/github/stars/alexdotpink/confkit?logo=github)](https://github.com/alexdotpink/confkit)
+
 Type‑safe config. Secure secrets. One import.
 
 Confkit is a tiny runtime for defining, validating, and safely exposing configuration and secrets across Node, edge, serverless, Next.js, Vite, and Expo.
@@ -10,17 +14,7 @@ Confkit is a tiny runtime for defining, validating, and safely exposing configur
 - Explicit client exposure for public values
 - Friendly CLI and framework plugins
 
-## Documentation
-
-- Overview: `docs/overview.mdx`
-- Quick Start: `docs/quickstart.mdx`
-- Schema: `docs/schema.mdx`
-- Sources & Layering: `docs/sources.mdx`
-- Variable Expansion: `docs/expansion.mdx`
-- CLI: `docs/cli.mdx`
-- Integrations: `docs/integrations/*`
-- Providers: `docs/providers/*`
-- Recipes: `docs/recipes.mdx`
+Docs: https://docskit.dev
 
 ## Install
 
@@ -72,9 +66,18 @@ npx confkit doctor
 npx confkit types --out confkit-env.d.ts
 ```
 
+## Community
+
+- Discord: https://discord.gg/CR5Pm5h7T8
+
 ## Contributing
 
-PRs welcome! Useful entry points:
+PRs welcome! Please read `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` before opening a PR or issue:
+
+- Contributing Guide: `CONTRIBUTING.md`
+- Code of Conduct: `CODE_OF_CONDUCT.md`
+
+Useful entry points:
 
 - Core runtime: `packages/confkit/src/index.ts`
 - Loader: `packages/confkit/src/load.ts`
