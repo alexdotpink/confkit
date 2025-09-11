@@ -24,6 +24,11 @@ export default async function confkitNextClientLoader(this: any) {
     const { loadConfig } = await (0, eval)("import('confkit/load')");
     const { clientEnv } = await loadConfig({ file: opts.file });
     const obj = Object.fromEntries(Object.entries(clientEnv).map(([k, v]) => [k, String(v)]));
+    // Best-effort: emit types for IDEs if possible
+    try {
+      const { generateClientTypes } = await (0, eval)("import('@confkit/next/codegen')");
+      await generateClientTypes({ file: opts.file }).catch(() => {});
+    } catch {}
     const code = `export default ${JSON.stringify(obj)};`;
     return callback(null, code);
   } catch (err) {
@@ -33,4 +38,3 @@ export default async function confkitNextClientLoader(this: any) {
     return callback(null, 'export default {};\n');
   }
 }
-

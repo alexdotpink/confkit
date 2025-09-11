@@ -26,9 +26,9 @@ const { clientEnv } = await loadConfig({ file: './conf/config.ts' });
 export default { env: clientEnv };
 ```
 
-Helpers
+- Helpers
 
-- `withConfkit(nextConfig, { file? })` – merges `env` with `clientEnv` and enables `import 'confkit:client'`
+- `withConfkit(nextConfig, { file?, typesOutFile? })` – merges `env` with `clientEnv`, enables `import 'confkit:client'`, and auto‑generates `confkit-env.d.ts` for typed client env (set `typesOutFile: false` to disable)
 - `withConfkitDevOverlay(nextConfig, { file? })` – injects loader + runtime to surface validation in Next dev overlay
 - `envFromConfkit({ file? })` – returns `clientEnv`
 - `middlewareEnsureConfkit({ file?, devOnly? })` – Next middleware that validates config and returns JSON errors in dev
@@ -48,6 +48,12 @@ You can also import the Vite‑style alias (Webpack builds only):
 ```ts
 import env from 'confkit:client';
 ```
+
+Typing
+
+- Types are generated automatically when using `withConfkit`/`defineNextConfig` on `next dev`/`next build`.
+- Configure output with `typesOutFile` or `CONFKIT_TYPES_OUT`; disable with `typesOutFile: false` or `CONFKIT_TYPES_DISABLE=1`.
+- Manual alternative: `npx confkit types` (or `--watch`) to write `confkit-env.d.ts`.
 
 Dev overlay diagnostics (optional)
 
