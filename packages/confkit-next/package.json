@@ -1,6 +1,6 @@
 {
   "name": "@confkit/next",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -36,7 +36,9 @@
       "require": "./dist/overlay/loader.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts src/codegen.ts src/overlay/loader.ts src/client/loader.ts --dts --format esm,cjs --sourcemap --out-dir dist --clean --platform node --target node18 --external confkit --external @confkit/* --no-config && tsup src/overlay/runtime.ts src/client/runtime.ts --dts --format esm --sourcemap --out-dir dist --platform browser --target es2020 --external confkit --external @confkit/* --no-config",
     "check-types": "tsc -p tsconfig.json --noEmit",
@@ -57,7 +59,10 @@
   ],
   "author": "Alex Pink",
   "contributors": [
-    { "name": "Alex Pink", "url": "https://github.com/alexdotpink" }
+    {
+      "name": "Alex Pink",
+      "url": "https://github.com/alexdotpink"
+    }
   ],
   "repository": {
     "type": "git",
@@ -68,11 +73,16 @@
     "url": "https://github.com/alexdotpink/confkit/issues"
   },
   "homepage": "https://github.com/alexdotpink/confkit/tree/main/packages/confkit-next#readme",
-  "engines": { "node": ">=18" },
-  "funding": { "type": "github", "url": "https://github.com/sponsors/alexdotpink" },
+  "engines": {
+    "node": ">=18"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/alexdotpink"
+  },
   "peerDependencies": {
     "next": ">=15.0.0",
-    "confkit": ">=0.0.1 <1.0.0"
+    "confkit": ">=0.0.2"
   },
   "devDependencies": {
     "confkit": "workspace:*"
