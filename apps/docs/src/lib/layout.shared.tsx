@@ -28,14 +28,7 @@ export function baseOptions(): BaseLayoutProps {
       ),
       url: '/',
     },
-    // see https://fumadocs.dev/docs/ui/navigation/links
-    links: [
-      {
-        type: 'main',
-        text: 'Docs',
-        url: '/docs/overview',
-        active: 'nested-url',
-      },
-    ],
+    // no extra sidebar links
+    links: [],
   };
 }
