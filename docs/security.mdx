@@ -1,0 +1,41 @@
+---
+title: Security & Production Defaults
+description: Safe by default with explicit client exposure and secret redaction.
+---
+
+## Defaults
+
+- `.env*` files are ignored when `NODE_ENV=production` unless `ALLOW_ENV_FILES_IN_PROD=true` (see `source().env()`)
+- `s.secret(...)` marks values as sensitive; `toJSON({ redact: true })` masks them with `mask` (default `•••`)
+- Deep redaction: arrays/objects/records/unions are redacted by schema shape
+- Client exposure is explicit: mark with `.client()`. Optionally require a prefix with `requireClientPrefix` in `defineConfig`.
+- In production builds, Confkit defaults to requiring a client prefix; set `clientPrefix(es)` or override with `requireClientPrefix`.
+
+## Audit Reads (optional)
+
+Emit structured events when secrets are read via `config.get(key)`.
+
+```ts title="Audit secret reads"
+export const config = defineConfig({
+  sources: [/* ... */],
+  schema: { STRIPE_SECRET: s.secret(s.string()) },
+  audit: { emit: (e) => console.log(JSON.stringify(e)), sample: 0.1 }, // 10% sample
+});
+```
+
+<Callout title="Edge/Serverless">
+  Confkit keeps the hot path free of Node‑only features. Secret providers or env‑file parsing remain server‑side concerns.
+</Callout>
+
+## Operational Tips
+
+- Keep private values out of logs; prefer `toJSON({ redact: true })`
+- Fail fast in CI with `npx confkit check --env production`
+- For cloud providers, use conservative TTL with jitter and consider `background: true`
+```ts title="Custom mask"
+export const config = defineConfig({
+  sources: [/* ... */],
+  schema: { STRIPE_SECRET: s.secret(s.string()) },
+  mask: '****',
+});
+```

@@ -1,0 +1,28 @@
+---
+title: FAQ
+description: Answers to the most common questions.
+---
+
+## Why not Zod/Valibot/etc.?
+
+- Confkit ships a tiny runtime focused on configuration use‑cases: URL/port/duration helpers, redaction metadata, client exposure, and sources/expansion built in. You can still transform or refine as needed.
+
+## How do I expose values to the client safely?
+
+- Mark them with `.client()`. Use `loadConfig()` or `pickClient()` to compute a `clientEnv` object, then inject via Next/Vite/Expo integrations.
+
+## How do I prevent accidental client exposure?
+
+- Set `requireClientPrefix: true` and choose `clientPrefix(es)` in `defineConfig`. This forces `.client()` keys to start with `PUBLIC_` (or your chosen prefixes).
+
+## Can I compute defaults from other variables?
+
+- Yes, with `expand: true` and `${VAR:-fallback}` patterns. Use `json(...)` to compute structured defaults.
+
+## Can I audit when secrets are read?
+
+- Pass an `audit` object to `defineConfig`. Reads via `config.get(key)` will emit events.
+
+## Does Confkit work on edge runtimes?
+
+- Yes, it avoids Node built‑ins on the hot path. Some features (like `.env` file loading) require Node and only run server‑side.

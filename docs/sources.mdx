@@ -1,0 +1,83 @@
+---
+title: Sources & Layering
+description: Merge env, files, and secret stores with clear precedence.
+---
+
+Sources return flat key/value objects that Confkit merges. Built‑ins live under `source()` and provider packages export helpers that also return sources.
+
+## Built‑in Sources
+
+- `source().env({ files?: boolean })` — includes `process.env` and, in dev, `.env`, `.env.local`, `.env.$NODE_ENV`
+  - In production, `.env*` files are ignored unless `ALLOW_ENV_FILES_IN_PROD=true`
+- `source().file('config.(json|yaml|yml|toml)')` — auto‑parsed by extension; missing/invalid → ignored
+- `source().inline(obj)` — programmatic overrides
+- For secrets, use provider packages below; the core does not include built‑in secret sources.
+
+<Callout title="Safety by Default">
+  The env file loader is disabled in production by default. Prefer managed secret stores in production.
+</Callout>
+
+<Callout title="Debug Provenance" type="info">
+  Use <code>npx confkit explain</code> to see which source provided each key (e.g., <code>env</code>, <code>file:config.yaml</code>, <code>inline</code>).
+</Callout>
+
+## Layering with `combine`
+
+Use `combine` to express precedence explicitly and avoid accidental overrides.
+
+```ts title="Layered sources with fallback"
+import { defineConfig, source, combine, s } from 'confkit';
+
+const primary = combine([
+  source().env(),                // highest priority in the group
+  source().file('config.local.yaml'),
+]).fallbackTo([
+  source().file('config.yaml'),  // defaults
+]);
+
+export const config = defineConfig({
+  sources: [primary],
+  schema: { PORT: s.port().default(3000), DATABASE_URL: s.string() },
+});
+```
+
+Under the hood, `combine([...]).fallbackTo([...])` merges each group left→right, then falls back to the next group only for keys that are missing entirely from the previous group.
+
+## Narrow and Map
+
+- `source().only(inner, keys)` — limit a source to a known set of keys
+- `source().map(inner, fn)` — map key names (e.g., add/remove prefixes)
+
+```ts title="Narrowing and mapping"
+const secrets = source().only(source().env(), ['DATABASE_URL','REDIS_URL']);
+const prefixed = source().map(source().env(), (k) => `APP_${k}`);
+```
+
+## Cloud Providers
+
+Use first‑party adapters for production secret backends:
+
+- AWS: `@confkit/aws` → `awsSecretsSource({ namePrefix: '/apps/myapp/' })`
+- GCP: `@confkit/gcp` → `gcpSecretsSource({ projectId: 'my-project', namePrefix: 'myapp_' })`
+- Azure: `@confkit/azure` → `azureKeyVaultSource({ vaultUrl: 'https://...' })`
+- Doppler: `@confkit/doppler` → `dopplerSource({ token, project, config })`
+- 1Password: `@confkit/1password` → `onePasswordSource({ vaults: ['...'] })`
+
+Each provides TTL caching, optional background refresh, and rotation callbacks.
+
+<Callout title="See Also">
+  Explore detailed options and examples under <a href="/docs/providers/aws">Providers</a>.
+</Callout>
+
+## Example File Layout
+
+<Files>
+  <Folder name="project" defaultOpen>
+    <File name="conf/config.ts" />
+    <File name=".env" />
+    <File name="config.yaml" />
+    <Folder name="src" defaultOpen>
+      <File name="server.ts" />
+    </Folder>
+  </Folder>
+</Files>

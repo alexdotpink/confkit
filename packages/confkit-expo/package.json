@@ -1,0 +1,58 @@
+{
+  "name": "@confkit/expo",
+  "version": "0.0.1",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --sourcemap --out-dir dist --clean --platform node --target node18 --external confkit --external @confkit/* --no-config",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "coverage": "vitest --coverage --run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "confkit",
+    "expo",
+    "react-native",
+    "env",
+    "config"
+  ],
+  "author": "Alex Pink",
+  "contributors": [
+    { "name": "Alex Pink", "url": "https://github.com/alexdotpink" }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexdotpink/confkit.git",
+    "directory": "packages/confkit-expo"
+  },
+  "bugs": {
+    "url": "https://github.com/alexdotpink/confkit/issues"
+  },
+  "homepage": "https://github.com/alexdotpink/confkit/tree/main/packages/confkit-expo#readme",
+  "engines": { "node": ">=18" },
+  "funding": { "type": "github", "url": "https://github.com/sponsors/alexdotpink" },
+  "peerDependencies": {
+    "confkit": ">=0.0.1 <1.0.0"
+  },
+  "devDependencies": {
+    "confkit": "workspace:*"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

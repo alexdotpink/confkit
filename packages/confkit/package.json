@@ -1,0 +1,96 @@
+{
+  "name": "confkit",
+  "version": "0.0.1",
+  "private": false,
+  "description": "Type-safe config and secure secrets for TypeScript runtimes.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./load": {
+      "types": "./dist/load.d.ts",
+      "import": "./dist/load.js",
+      "require": "./dist/load.cjs"
+    },
+    "./poll": {
+      "types": "./dist/poll.d.ts",
+      "import": "./dist/poll.js",
+      "require": "./dist/poll.cjs"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/load.ts src/poll.ts src/cli/index.ts --dts --format esm,cjs --sourcemap --out-dir dist --clean --target node18 --external esbuild --external chokidar --no-config",
+    "dev": "tsup src/index.ts src/load.ts src/poll.ts src/cli/index.ts --dts --format esm,cjs --sourcemap --out-dir dist --watch --target node18 --external esbuild --external chokidar --no-config",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "coverage": "vitest --coverage --run",
+    "size": "size-limit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "config",
+    "secrets",
+    "typescript",
+    "schema",
+    "validation",
+    "env",
+    "dotenv",
+    "yaml",
+    "toml",
+    "edge",
+    "nextjs"
+  ],
+  "author": "Alex Pink",
+  "contributors": [
+    { "name": "Alex Pink", "url": "https://github.com/alexdotpink" }
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexdotpink/confkit.git",
+    "directory": "packages/confkit"
+  },
+  "bugs": {
+    "url": "https://github.com/alexdotpink/confkit/issues"
+  },
+  "homepage": "https://github.com/alexdotpink/confkit/tree/main/packages/confkit#readme",
+  "engines": { "node": ">=18" },
+  "funding": { "type": "github", "url": "https://github.com/sponsors/alexdotpink" },
+  "sideEffects": false,
+  "bin": {
+    "confkit": "./dist/cli/index.cjs"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "yaml": "^2.8.1",
+    "toml": "^3.0.0",
+    "dotenv": "^16.6.1",
+    "esbuild": "^0.23.1",
+    "chokidar": "^3.6.0"
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "35 KB",
+      "gzip": true
+    }
+  ]
+}

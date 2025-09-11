@@ -1,0 +1,56 @@
+---
+title: Variable Expansion
+description: Compute values from other values with a tiny template language.
+---
+
+Enable `${...}` expansion by setting `expand: true` on `defineConfig`. You can optionally allow assignments to write back to `process.env` or a file cache.
+
+## Enable Expansion
+
+```ts title="conf/config.ts"
+export const config = defineConfig({
+  sources: [source().env()],
+  schema: { /* ... */ },
+  expand: true,
+  // expandAssign: 'env' | 'cache' | false
+  expandAssign: 'cache',
+});
+```
+
+## Patterns
+
+- `${VAR}` — substitute value
+- `${VAR:-fallback}` — use fallback when unset/empty
+- `${VAR:?message}` — throw when missing
+- `${VAR:+alt}` — use alt when set/non‑empty
+- `${VAR:=value}` — assign when missing
+- `json(...)` helper inside patterns — `${VAR:=json({"a":1})}`; body is recursively expanded, then parsed as JSON
+
+```bash title="Examples"
+PORT=${PORT:-3000}
+DATABASE_URL=${DATABASE_URL:?Set DATABASE_URL}
+FEATURES=${FEATURES:=json({"flags":{"newCheckout":false}})}
+AUTH_URL=${AUTH_URL:-${BASE_URL}/auth}
+```
+
+<Callout title="Whole‑value vs inline">
+  When the entire string is a single <code>$\{...}</code> expression, Confkit returns the computed value as a native type (e.g., an object for <code>json(...)</code>). Otherwise, the result is a string with substitutions applied.
+</Callout>
+
+## Assignment Modes
+
+- `expandAssign: 'env'` — `${VAR:=...}` writes to `process.env`
+- `expandAssign: 'cache'` — also persists to `.confkit/cache.json` (best‑effort)
+- `expandAssign: false` (default) — compute‑only, no writes
+
+<Tabs items={["env", "cache", "off"]}>
+  <Tab>
+    Useful in short‑lived processes where you want defaults materialized in `process.env`.
+  </Tab>
+  <Tab>
+    Useful for local dev to persist computed values across reloads.
+  </Tab>
+  <Tab>
+    Safer for CI and production; no side‑effects.
+  </Tab>
+</Tabs>

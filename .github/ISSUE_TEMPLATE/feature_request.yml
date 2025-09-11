@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest an idea for Confkit
+labels: [feat]
+title: "feat: "
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for helping improve Confkit!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What’s the problem this solves?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the solution you’d like
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternative solutions you’ve considered
+  - type: input
+    id: scope
+    attributes:
+      label: Affected packages (if known)
+      placeholder: e.g. confkit, @confkit/next, @confkit/aws
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I have searched existing issues/discussions
+          required: true
+

@@ -1,0 +1,9 @@
+{
+  "extends": "../confkit/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "declarationMap": true
+  },
+  "include": ["src/**/*"]
+}

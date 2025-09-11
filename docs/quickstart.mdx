@@ -1,0 +1,99 @@
+---
+title: Quick Start
+description: Install, define a schema, validate, ship.
+---
+
+<Steps>
+  <Step>
+    <strong>Install</strong>
+
+    <Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+      <Tab>
+        ```bash
+        pnpm add confkit
+        # optional adapters
+        pnpm add @confkit/next @confkit/vite @confkit/expo @confkit/aws @confkit/gcp @confkit/azure @confkit/doppler @confkit/1password
+        ```
+      </Tab>
+      <Tab>
+        ```bash
+        npm i confkit
+        npm i @confkit/next @confkit/vite @confkit/expo @confkit/aws @confkit/gcp @confkit/azure @confkit/doppler @confkit/1password
+        ```
+      </Tab>
+      <Tab>
+        ```bash
+        yarn add confkit
+        yarn add @confkit/next @confkit/vite @confkit/expo @confkit/aws @confkit/gcp @confkit/azure @confkit/doppler @confkit/1password
+        ```
+      </Tab>
+      <Tab>
+        ```bash
+        bun add confkit @confkit/next @confkit/vite @confkit/expo @confkit/aws @confkit/gcp @confkit/azure @confkit/doppler @confkit/1password
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    <strong>Define your schema and sources</strong>
+
+```ts title="conf/config.ts"
+import { defineConfig, s, source } from 'confkit';
+
+export const config = defineConfig({
+  sources: [
+    source().env(),
+    source().file('config.yaml'),
+  ],
+  schema: {
+    NODE_ENV: s.enum(['development','test','production']).default('development'),
+    PORT: s.port().default(3000),
+    DATABASE_URL: s.url(),
+    REDIS_URL: s.string().optional(),
+    FEATURES: s.object({
+      newCheckout: s.boolean().default(false),
+      abTestVariant: s.enum(['A','B']).default('A'),
+    }).default({ newCheckout: false, abTestVariant: 'A' }),
+    STRIPE_SECRET: s.secret(s.string()),
+    PUBLIC_APP_NAME: s.string().client().default('confkit'),
+  },
+});
+```
+  </Step>
+
+  <Step>
+    <strong>Load once at startup</strong>
+
+```ts title="server.ts"
+import { config } from './conf/config';
+
+const env = await config.ready();
+console.log('PORT:', env.PORT);
+```
+  </Step>
+
+  <Step>
+    <strong>Debug with the CLI</strong>
+
+```bash title="Print redacted values"
+npx confkit print --file conf/config.ts
+```
+  </Step>
+
+  <Step>
+    <strong>Expose safe client env</strong>
+
+```js title="next.config.mjs (Next.js)"
+import { loadConfig } from 'confkit/load';
+const { clientEnv } = await loadConfig({ file: './conf/config.ts' });
+export default { env: clientEnv };
+```
+  </Step>
+</Steps>
+
+<Callout title="What’s next?" type="info">
+  - Learn the <a href="/docs/schema">Schema</a> helpers<br />
+  - Layer <a href="/docs/sources">Sources</a> and add cloud providers<br />
+  - Use <a href="/docs/expansion">Variable Expansion</a> for computed defaults
+</Callout>

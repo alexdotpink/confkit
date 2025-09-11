@@ -1,0 +1,38 @@
+---
+title: Doppler
+description: Pull secrets from Doppler (Service Token or API token).
+---
+
+## Install
+
+```bash
+pnpm add @confkit/doppler
+```
+
+## Usage
+
+```ts title="Service Token"
+import { defineConfig, s } from 'confkit';
+import { dopplerSource } from '@confkit/doppler';
+
+export const config = defineConfig({
+  sources: [dopplerSource({ token: process.env.DOPPLER_TOKEN! })],
+  schema: { DATABASE_URL: s.string(), STRIPE_SECRET: s.secret(s.string()) },
+});
+```
+
+```ts title="API token with project/config"
+dopplerSource({ token: process.env.DOPPLER_API_TOKEN!, project: 'myproj', config: 'prod' })
+```
+
+## Options
+
+- `token: string` — service token or API token
+- `project?: string`, `config?: string` — required when using API tokens
+- `keyPrefix?: string` — include keys with prefix only
+- `mapNameToKey?: (name) => string` — map Doppler key → config key
+- `ttlMs?`, `jitter?`, `background?`, `onRotate?`
+
+## Notes
+
+- Uses Doppler’s download endpoint; applies ETag as a coarse version for rotation detection

@@ -1,0 +1,28 @@
+---
+title: Expo
+description: Populate `extra` with safe client env computed from Confkit.
+---
+
+Use the core loader or the `@confkit/expo` helper to compute `extra` for Expo app config.
+
+```ts title="apps/expo-example/app.config.ts"
+import { loadConfig } from 'confkit/load';
+
+export default (async () => {
+  const { clientEnv } = await loadConfig({ file: '../../conf/config.ts' });
+  return { expo: { extra: clientEnv } };
+})();
+```
+
+Or with the helper:
+
+```ts title="apps/expo-example/app.config.ts"
+import withConfkitExpo from '@confkit/expo';
+
+export default await withConfkitExpo({}, { file: '../../conf/config.ts' });
+```
+
+Notes:
+
+- `clientEnv` includes only keys marked `.client()` in your schema (or matching configured client prefixes)
+- Values are coerced to strings; non‑strings are JSON stringified

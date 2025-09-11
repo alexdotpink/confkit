@@ -1,0 +1,13 @@
+{
+  "title": "Providers",
+  "pages": [
+    "aws",
+    "gcp",
+    "azure",
+    "doppler",
+    "1password",
+    "..."
+  ],
+  "defaultOpen": true
+}
+
