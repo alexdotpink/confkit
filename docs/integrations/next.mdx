@@ -116,19 +116,8 @@ export async function GET() {
 ```tsx title="app/env/page.tsx (Client Component) — two options"
 'use client';
 
-// Option A: process.env (Next injects from next.config)
-function FromProcessEnv() {
-  return (
-    <>
-      <div>App Name: {process.env.NEXT_PUBLIC_APP_NAME}</div>
-      <div>Flag: {String(process.env.NEXT_PUBLIC_FEATURE_FLAG)}</div>
-    </>
-  );
-}
-
-// Option B: client module (typed via `confkit types`)
-// Preferred for Next.js; works with Turbopack and Webpack
 import env from '@confkit/next/client';
+
 function FromVirtualModule() {
   return (
     <>
@@ -179,11 +168,12 @@ export default async function middleware(_req: NextRequest) {
 - The Vite‑style alias <code>confkit:client</code> is supported when using Webpack via the Next plugin wrapper; Turbopack does not use Webpack loaders.
 - The Confkit dev overlay uses a Webpack loader. With Turbopack, prefer enabling <code>ensure</code> to fail fast or rely on console errors from server components.
 
-## Troubleshooting
+## Typing and Troubleshooting
 
+- Auto types: when you use `defineNextConfig`/`withConfkit`, Confkit generates `confkit-env.d.ts` on `next dev`/`next build` so `import '@confkit/next/client'` and `import 'confkit:client'` are fully typed. Configure via `typesOutFile` or disable with `typesOutFile: false`.
+- Manual types: alternatively, run `npx confkit types` (or `npx confkit types --watch`) to generate/update `confkit-env.d.ts`.
 - Overlay shows an error but build continues: this is expected — the loader emits an error for the overlay panel without stopping the build. Fix the issues and it clears.
 - Client env missing: ensure your key is `.client()` or matches one of the allowed prefixes, and that you wrapped `next.config` with `withConfkit(...)`.
-- TypeScript for client env: run `confkit types` to generate `confkit-env.d.ts` — it includes declarations for both `@confkit/next/client` and `confkit:client`.
 - TypeScript config not picked up: check the `file` path you pass; default is `./conf/config.ts` from CWD.
 
 ## Complete example

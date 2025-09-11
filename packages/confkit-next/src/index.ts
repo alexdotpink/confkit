@@ -1,8 +1,11 @@
 import path from 'node:path';
 import { NextConfig } from 'next';
+import { generateClientTypes } from './codegen';
 
 export type WithConfkitOptions = {
   file?: string;
+  // Where to write generated d.ts. Set to false to disable.
+  typesOutFile?: string | false;
 };
 
 async function loadClientEnv(file?: string) {
@@ -13,6 +16,10 @@ async function loadClientEnv(file?: string) {
 
 export async function withConfkit(nextConfig: NextConfig = {}, opts: WithConfkitOptions = {}): Promise<NextConfig> {
   const clientEnv = await loadClientEnv(opts.file);
+  // Generate types on the fly for better DX
+  try {
+    if (opts.typesOutFile !== false) await generateClientTypes({ file: opts.file, outFile: typeof opts.typesOutFile === 'string' ? opts.typesOutFile : undefined });
+  } catch {}
   const baseEnv: Record<string, string> = {};
   const existing = nextConfig.env ?? {};
   for (const k of Object.keys(existing)) {
@@ -98,7 +105,7 @@ function basicClientEnv(prefixes = ['PUBLIC_', 'NEXT_PUBLIC_', 'EXPO_PUBLIC_']):
   return out;
 }
 
-export function defineNextConfig(opts: { file?: string; overlay?: boolean; ensure?: boolean } = {}): NextConfig | Promise<NextConfig> {
+export function defineNextConfig(opts: { file?: string; overlay?: boolean; ensure?: boolean; typesOutFile?: string | false } = {}): NextConfig | Promise<NextConfig> {
   const file = opts.file;
   const enableOverlay = opts.overlay === true; // default off for fast dev
   const base: NextConfig = {};
@@ -106,11 +113,15 @@ export function defineNextConfig(opts: { file?: string; overlay?: boolean; ensur
 
   const isProd = process.env.NODE_ENV === 'production' || process.env.NEXT_PHASE === 'phase-production-build';
   if (isProd) {
-    return withConfkit(overlayWrapped, { file });
+    return withConfkit(overlayWrapped, { file, typesOutFile: opts.typesOutFile });
   }
   if (opts.ensure) {
-    return withConfkit(overlayWrapped, { file });
+    return withConfkit(overlayWrapped, { file, typesOutFile: opts.typesOutFile });
   }
+  // Dev fast-path: still try to generate types without blocking
+  try {
+    if (opts.typesOutFile !== false) void generateClientTypes({ file, outFile: typeof opts.typesOutFile === 'string' ? opts.typesOutFile : undefined });
+  } catch {}
   const fastEnv = basicClientEnv();
   const merged = { ...overlayWrapped, env: { ...(overlayWrapped.env || {}), ...fastEnv } } as NextConfig;
   return merged;
