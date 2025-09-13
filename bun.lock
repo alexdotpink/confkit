@@ -46,7 +46,7 @@
     },
     "examples/nextjs": {
       "name": "confkit-next-example",
-      "version": "0.0.0",
+      "version": "0.0.1",
       "dependencies": {
         "@confkit/next": "*",
         "confkit": "*",
@@ -61,7 +61,7 @@
     },
     "packages/confkit": {
       "name": "confkit",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "bin": {
         "confkit": "./dist/cli/index.cjs",
       },
@@ -75,7 +75,7 @@
     },
     "packages/confkit-1password": {
       "name": "@confkit/1password",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "@1password/connect": "^1.4.2",
       },
@@ -85,7 +85,7 @@
     },
     "packages/confkit-aws": {
       "name": "@confkit/aws",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "@aws-sdk/client-secrets-manager": "^3.645.0",
       },
@@ -95,7 +95,7 @@
     },
     "packages/confkit-azure": {
       "name": "@confkit/azure",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "@azure/identity": "^4.5.0",
         "@azure/keyvault-secrets": "^4.9.0",
@@ -106,24 +106,24 @@
     },
     "packages/confkit-doppler": {
       "name": "@confkit/doppler",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "peerDependencies": {
         "confkit": "*",
       },
     },
     "packages/confkit-expo": {
       "name": "@confkit/expo",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "devDependencies": {
         "confkit": "workspace:*",
       },
       "peerDependencies": {
-        "confkit": ">=0.0.1 <1.0.0",
+        "confkit": ">=0.0.2",
       },
     },
     "packages/confkit-gcp": {
       "name": "@confkit/gcp",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "@google-cloud/secret-manager": "^5.6.0",
       },
@@ -133,23 +133,23 @@
     },
     "packages/confkit-next": {
       "name": "@confkit/next",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "devDependencies": {
         "confkit": "workspace:*",
       },
       "peerDependencies": {
-        "confkit": ">=0.0.1 <1.0.0",
+        "confkit": ">=0.0.2",
         "next": ">=15.0.0",
       },
     },
     "packages/confkit-vite": {
       "name": "@confkit/vite",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "devDependencies": {
         "confkit": "workspace:*",
       },
       "peerDependencies": {
-        "confkit": ">=0.0.1 <1.0.0",
+        "confkit": ">=0.0.2",
         "vite": ">=4.0.0",
       },
     },
