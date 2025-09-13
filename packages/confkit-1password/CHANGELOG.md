@@ -1,5 +1,12 @@
 # @confkit/1password
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [38d6bb6]
+  - confkit@0.2.0
+
 ## 1.0.0
 
 ### Patch Changes
