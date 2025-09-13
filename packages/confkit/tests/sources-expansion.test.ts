@@ -77,6 +77,19 @@ describe('source.file parsing', () => {
     });
     await expect(cfg.ready()).resolves.toEqual({ J: '1', Y: 2, T: 3 });
   });
+
+  it('parses dotenv files via file()', async () => {
+    const dir = tmpdir();
+    process.chdir(dir);
+    const envPath = path.join(dir, '.env');
+    fs.writeFileSync(envPath, 'E1=123\nE2=hello\n');
+
+    const cfg = defineConfig({
+      sources: [source().file(envPath)],
+      schema: { E1: s.int(), E2: s.string() },
+    });
+    await expect(cfg.ready()).resolves.toEqual({ E1: 123, E2: 'hello' });
+  });
 });
 
 describe('combine().fallbackTo()', () => {

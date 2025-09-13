@@ -425,11 +425,12 @@ export function source() {
       return fn;
     },
     file(pth: string): Source {
-      // parse json/yaml/toml by extension
+      // parse json/yaml/toml by extension; support dotenv files (.env, .env.*)
       const fn: Source = async () => {
         const fs = await import("node:fs");
         const path = await import("node:path");
         const ext = path.extname(pth).toLowerCase();
+        const base = path.basename(pth).toLowerCase();
         if (!fs.existsSync(pth) || !fs.statSync(pth).isFile()) return {};
         const data = fs.readFileSync(pth, "utf8");
         try {
@@ -441,6 +442,15 @@ export function source() {
           if (ext === ".toml") {
             const toml = await import("toml");
             return toml.parse(data) ?? {};
+          }
+          // Handle dotenv files: '.env', '.env.*', or files with '.env' extension
+          if (base === ".env" || base.startsWith(".env.") || ext === ".env") {
+            const { parse } = await import("dotenv");
+            try {
+              return parse(data) ?? {};
+            } catch {
+              return {};
+            }
           }
         } catch {
           // swallow parse errors for MVP; treat as empty

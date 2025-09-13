@@ -9,7 +9,7 @@ Sources return flat key/value objects that Confkit merges. Built‑ins live unde
 
 - `source().env({ files?: boolean })` — includes `process.env` and, in dev, `.env`, `.env.local`, `.env.$NODE_ENV`
   - In production, `.env*` files are ignored unless `ALLOW_ENV_FILES_IN_PROD=true`
-- `source().file('config.(json|yaml|yml|toml)')` — auto‑parsed by extension; missing/invalid → ignored
+- `source().file('config.(json|yaml|yml|toml)')` — auto‑parsed by extension; missing/invalid → ignored. Also supports dotenv files like `.env`, `.env.local`, or any path ending in `.env`.
 - `source().inline(obj)` — programmatic overrides
 - For secrets, use provider packages below; the core does not include built‑in secret sources.
 
