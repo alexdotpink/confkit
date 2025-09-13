@@ -18,7 +18,25 @@ type Loaded = {
 };
 
 export async function loadConfig(opts: { file?: string; computeClientEnv?: boolean } = {}): Promise<Loaded> {
-  const file = opts.file ?? path.resolve(process.cwd(), 'conf/config.ts');
+  let file = opts.file ?? path.resolve(process.cwd(), 'conf/config.ts');
+  // If no file provided and default doesn't exist, search upwards for conf/config.(ts|tsx|mjs|js)
+  if (!opts.file) {
+    const exists = fs.existsSync(file);
+    if (!exists) {
+      const candidates = ['conf/config.ts', 'conf/config.tsx', 'conf/config.mjs', 'conf/config.js'];
+      let dir = process.cwd();
+      for (let i = 0; i < 8; i++) {
+        for (const rel of candidates) {
+          const p = path.resolve(dir, rel);
+          if (fs.existsSync(p) && fs.statSync(p).isFile()) { file = p; break; }
+        }
+        if (fs.existsSync(file)) break;
+        const up = path.dirname(dir);
+        if (up === dir) break;
+        dir = up;
+      }
+    }
+  }
   const ext = path.extname(file).toLowerCase();
   let modUrl: string;
 

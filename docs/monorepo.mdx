@@ -1,0 +1,69 @@
+---
+title: Monorepo
+description: Zero-config workspace discovery and per-workspace CLI.
+---
+
+Confkit includes lightweight, zero‑config monorepo support focused on developer experience and CI.
+
+What you get:
+
+- Automatic workspace discovery using `package.json#workspaces` (with a fallback to `packages/*` and `apps/*`).
+- Per‑workspace execution with proper `cwd`, so `.env*` and relative files resolve inside each package.
+- One command to validate all packages or generate types across the repo.
+
+## Quick Start
+
+```bash
+# Validate all workspaces (uses NODE_ENV if provided)
+npx confkit ws check --env production --strict
+
+# Generate client types per workspace
+npx confkit ws types
+
+# Generate server-side types per workspace
+npx confkit ws types --server
+```
+
+Confkit will include only workspaces that contain `conf/config.(ts|tsx|mjs|js)`.
+
+## Commands
+
+- `ws check` — Validate every matching workspace and print a table. Respects per‑workspace `.env*` files and your schema/policy.
+- `ws types` — Generate env typing files per workspace.
+  - Client modules: `confkit-env.d.ts` with concrete keys for `confkit:client` and `@confkit/next/client`.
+  - Server interface: `confkit-env-server.d.ts` with a `ConfkitEnv` interface inferred from the schema.
+
+## Flags
+
+- `--root <path>` — Override monorepo root (auto‑detected by walking up to the nearest `package.json`).
+- `--only <substring>` — Filter workspaces by name.
+- `--fail-fast` — Stop `ws check` on the first failure.
+- `--server` — For `ws types`, generate server‑side interface instead of client modules.
+- `--out <file>` — Custom output filename for types (written in each workspace).
+
+## Matching and CWD rules
+
+- Workspaces are discovered from `package.json#workspaces` (array or `workspaces.packages`). If not present, Confkit tries `packages/*` and `apps/*`.
+- Only workspaces containing `conf/config.(ts|tsx|mjs|js)` are included.
+- Each workspace runs with `process.cwd()` set to that package directory, so:
+  - `source().env()` resolves `.env`, `.env.local`, and `.env.${NODE_ENV}` from that package.
+  - `source().file('config.json')` resolves relative to that package.
+
+## CI Example
+
+```yaml
+jobs:
+  confkit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npx confkit ws check --env production --strict
+```
+
+## Single‑repo convenience
+
+When you run `npx confkit` without `--file`, Confkit searches upward for the nearest `conf/config.(ts|tsx|mjs|js)`. This lets you run commands inside subfolders without typing `--file`.
+

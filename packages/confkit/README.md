@@ -40,12 +40,25 @@ confkit init
 confkit explain --key FOO
 confkit doctor
 confkit types --out confkit-env.d.ts
+confkit ws check            # run check across all workspaces
+confkit ws types            # generate types in each workspace
 ```
 
 ## Docs
 
 - Overview, schema, sources, expansion: see the `/docs` directory in this repo.
 - Next.js, Vite, Expo integrations, and provider guides are under `/docs/integrations/*` and `/docs/providers/*`.
+
+## Monorepo Support
+
+- Zero‑config workspace discovery using `package.json#workspaces` (fallback to `packages/*` and `apps/*`).
+- Per‑workspace CWD handling so `.env*` and relative files are resolved inside each package.
+- New commands:
+  - `confkit ws check` — validate every workspace that has `conf/config.(ts|js)`
+  - `confkit ws types` — generate types per workspace (client or `--server`)
+- Flags: `--root <path>` (override root), `--only <substring>` (filter by name), `--fail-fast`, `--server`, `--out <file>`.
+
+Tip: Running `confkit` without `--file` searches upward for the nearest `conf/config.(ts|tsx|mjs|js)` so you can run it from subfolders.
 
 ## Notes
 

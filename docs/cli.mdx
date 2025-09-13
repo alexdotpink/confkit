@@ -20,6 +20,8 @@ npx confkit types --out confkit-env.d.ts
 npx confkit types --server --out confkit-env-server.d.ts
 npx confkit types --watch
 npx confkit scan --dir src --allow NODE_ENV,VERCEL_ENV
+npx confkit ws check
+npx confkit ws types --server
 ```
 
 ## Commands
@@ -48,11 +50,17 @@ npx confkit scan --dir src --allow NODE_ENV,VERCEL_ENV
   - prints unknown keys used in code (not declared) and schema keys unused in code
   - `--dir <path>` — root directory to scan (default CWD)
   - `--allow <keys>` — comma-separated keys to ignore (e.g. `NODE_ENV`)
+- `ws` — Monorepo helpers; discover workspaces and run per‑workspace
+  - `ws check` — validate every workspace that has `conf/config.(ts|js)`
+  - `ws types` — generate types in each matching workspace (client or `--server`)
+  - Flags: `--root <path>` (override monorepo root), `--only <substring>` (filter by workspace name), `--fail-fast` (stop on first failure), `--server`, `--out <file>`
 
 ## Common Flags
 
 - `--file <path>` — config file (default `conf/config.ts`)
 - `--env <name>` — set `NODE_ENV` before loading
+
+Note: If `--file` is omitted, Confkit searches upward from the current directory for the nearest `conf/config.(ts|tsx|mjs|js)`.
 
 ```text title="Sample output (print)"
 +---------------------------+---------------------------+

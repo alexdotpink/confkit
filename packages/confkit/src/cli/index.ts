@@ -83,6 +83,95 @@ function colorize() {
   } as const;
 }
 
+// Monorepo helpers — zero-config workspace discovery and per-package execution
+function isDir(p: string): boolean {
+  try { return fs.statSync(p).isDirectory(); } catch { return false; }
+}
+function isFile(p: string): boolean {
+  try { return fs.statSync(p).isFile(); } catch { return false; }
+}
+function readJSON(p: string): any | undefined {
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return undefined; }
+}
+function findRepoRoot(start: string): string | undefined {
+  let dir = path.resolve(start);
+  for (let i = 0; i < 8; i++) {
+    if (isFile(path.join(dir, 'package.json'))) return dir;
+    const up = path.dirname(dir);
+    if (up === dir) break;
+    dir = up;
+  }
+  return undefined;
+}
+function expandWorkspacePatterns(root: string, patterns: string[]): string[] {
+  const results: string[] = [];
+  for (const pat of patterns) {
+    // Support common forms like 'packages/*', 'apps/*', 'packages/**'
+    const abs = path.resolve(root, pat);
+    // If pattern does not contain '*' and is a directory, take it directly
+    if (!pat.includes('*')) {
+      if (isDir(abs)) results.push(abs);
+      continue;
+    }
+    // Handle 'dir/*' or 'dir/**'
+    const segs = pat.split(/[\\/]+/);
+    const star = segs.indexOf('*');
+    const dstar = segs.indexOf('**');
+    if (star >= 0 || dstar >= 0) {
+      const upto = Math.min(star >= 0 ? star : Infinity, dstar >= 0 ? dstar : Infinity);
+      const base = path.resolve(root, segs.slice(0, upto).join(path.sep));
+      if (!isDir(base)) continue;
+      const entries = fs.readdirSync(base, { withFileTypes: true });
+      for (const e of entries) {
+        if (!e.isDirectory()) continue;
+        const cand = path.join(base, e.name);
+        results.push(cand);
+      }
+      continue;
+    }
+  }
+  return Array.from(new Set(results));
+}
+function findWorkspaces(root: string): Array<{ dir: string; name: string }>
+{
+  const pkg = readJSON(path.join(root, 'package.json')) || {};
+  let patterns: string[] | undefined;
+  if (Array.isArray(pkg.workspaces)) patterns = pkg.workspaces as string[];
+  else if (pkg.workspaces && Array.isArray(pkg.workspaces.packages)) patterns = pkg.workspaces.packages as string[];
+  if (!patterns || !patterns.length) {
+    // Fall back to common conventions
+    patterns = ['packages/*', 'apps/*'];
+  }
+  const dirs = expandWorkspacePatterns(root, patterns);
+  const out: Array<{ dir: string; name: string }> = [];
+  for (const d of dirs) {
+    const p = readJSON(path.join(d, 'package.json')) || {};
+    // Skip root or non-packages
+    if (!p || typeof p !== 'object') continue;
+    out.push({ dir: d, name: String(p.name || path.basename(d)) });
+  }
+  return out;
+}
+function findWorkspaceConfigs(root: string): Array<{ dir: string; name: string; configFile: string }>
+{
+  const workspaces = findWorkspaces(root);
+  const results: Array<{ dir: string; name: string; configFile: string }> = [];
+  const candidates = ['conf/config.ts', 'conf/config.tsx', 'conf/config.mjs', 'conf/config.js'];
+  for (const w of workspaces) {
+    for (const rel of candidates) {
+      const p = path.join(w.dir, rel);
+      if (isFile(p)) { results.push({ ...w, configFile: p }); break; }
+    }
+  }
+  return results;
+}
+
+async function withCwd<T>(dir: string, fn: () => Promise<T>): Promise<T> {
+  const prev = process.cwd();
+  process.chdir(dir);
+  try { return await fn(); } finally { process.chdir(prev); }
+}
+
 async function run() {
   const { cmd, flags } = parseArgs(process.argv);
   const file = typeof flags.file === 'string' ? path.resolve(String(flags.file)) : undefined;
@@ -104,6 +193,7 @@ Commands:
   doctor        Run basic environment checks
   types         Generate types for 'confkit:client' virtual module
   scan          Scan code for process.env/import.meta.env usage vs schema
+  ws            Monorepo helpers: run across all workspaces
 
 Flags:
   --file <path>       Path to config file (default conf/config.ts)
@@ -122,6 +212,9 @@ Flags:
   --watch             For types: watch and regenerate on changes
   --dir <path>        For scan: directory to scan (default CWD)
   --allow <keys>      For scan: comma-separated allowed keys to ignore
+  --root <path>       For ws: monorepo root (default auto-detect)
+  --only <glob>       For ws: filter workspace name by substring
+  --fail-fast         For ws check: stop on first failure
 
 Dev controls:
   r: reload now
@@ -224,6 +317,128 @@ export const config = defineConfig({
   }
 
   try {
+    // Monorepo 'ws' subcommands
+    if (cmd === 'ws' || cmd === 'workspaces' || cmd === 'monorepo') {
+      const c = colorize();
+      const sub = (process.argv[3] || 'check').toLowerCase();
+      const root = typeof flags['root'] === 'string' ? path.resolve(String(flags['root'])) : (findRepoRoot(process.cwd()) ?? process.cwd());
+      const filter = typeof flags['only'] === 'string' ? String(flags['only']).toLowerCase() : '';
+      const configs = findWorkspaceConfigs(root).filter(w => !filter || w.name.toLowerCase().includes(filter));
+      if (!configs.length) {
+        console.log('ws:', 'no workspaces with conf/config.(ts|js) found');
+        return;
+      }
+      console.log(c.dim(`ws: ${configs.length} workspace(s) detected under ${path.relative(process.cwd(), root) || '.'}`));
+      let failures = 0;
+      if (sub === 'check') {
+        for (const w of configs) {
+          if (env) process.env.NODE_ENV = env;
+          const title = `${w.name} (${path.relative(root, w.dir) || '.'})`;
+          process.stdout.write(`\n› ${title}\n`);
+          const start = Date.now();
+          try {
+            await withCwd(w.dir, async () => {
+              const { config } = await loadConfig({ file: w.configFile, computeClientEnv: false });
+              await config.ready();
+              const json = (await config.toJSON({ redact: true })) as Record<string, unknown>;
+              const rows = flatten(json);
+              const topLevel = Object.keys(json).length;
+              console.log(c.green(`✔ Validated ${topLevel} keys`));
+              if (typeof (config as any).lintUnknowns === 'function') {
+                try {
+                  const unknowns = await (config as any).lintUnknowns();
+                  if (unknowns.length) {
+                    console.log(c.yellow(`⚠ Unknown keys (${unknowns.length}):`));
+                    for (const u of unknowns) console.log('  -', u);
+                    if (flags['strict']) failures++;
+                  }
+                } catch {}
+              }
+              printTable(rows);
+            });
+          } catch (err) {
+            failures++;
+            const issues = (err as { issues?: Array<{ path: string; message: string }> }).issues ?? [];
+            console.error(c.red('✖ Validation failed'));
+            if (issues.length) printTable(issues.map((i) => [i.path, i.message]), ['Path', 'Message']);
+            if (flags['fail-fast']) break;
+          } finally {
+            const dt = Date.now() - start;
+            console.log(c.dim(`(${dt}ms)`));
+          }
+        }
+        if (failures) process.exitCode = 1;
+        return;
+      }
+      if (sub === 'types') {
+        const server = !!flags['server'];
+        let wrote = 0;
+        for (const w of configs) {
+          await withCwd(w.dir, async () => {
+            const outFile = typeof flags['out'] === 'string'
+              ? path.resolve(String(flags['out']))
+              : path.resolve(w.dir, server ? 'confkit-env-server.d.ts' : 'confkit-env.d.ts');
+
+            if (server) {
+              const { config } = await loadConfig({ file: w.configFile, computeClientEnv: false });
+              const desc = typeof (config as any).describeSchema === 'function' ? (config as any).describeSchema() as Record<string, unknown> : undefined;
+              if (!desc) {
+                console.log('types --server: not supported in this version of confkit');
+                return;
+              }
+              function tsFromNode(node: any): string {
+                const kind = node?.kind;
+                if (kind === 'object') {
+                  const inner = node.shape as Record<string, any>;
+                  const fields = Object.keys(inner).map(k => `${JSON.stringify(k)}: ${tsFromNode(inner[k])};`).join(' ');
+                  return `{ ${fields} }`;
+                }
+                if (kind === 'array') return `${tsFromNode(node.inner)}[]`;
+                if (kind === 'record') return `Record<string, ${tsFromNode(node.inner)}>`;
+                if (kind === 'union') return (node.nodes as any[]).map(tsFromNode).join(' | ') || 'unknown';
+                if (kind === 'enum') return (node.values as string[]).map((v: string) => JSON.stringify(v)).join(' | ') || 'string';
+                if (kind === 'json') return node.inner ? tsFromNode(node.inner) : 'any';
+                if (kind === 'int' || kind === 'number' || kind === 'float' || kind === 'port' || kind === 'duration') return 'number';
+                return 'string';
+              }
+              const fields = Object.entries(desc).map(([k, v]) => `${JSON.stringify(k)}: ${tsFromNode(v)};`).join('\n  ');
+              const lines: string[] = [];
+              lines.push('// Generated by confkit ws types --server');
+              lines.push('export interface ConfkitEnv {');
+              lines.push('  ' + fields);
+              lines.push('}');
+              fs.writeFileSync(outFile, lines.join('\n') + '\n', 'utf8');
+            } else {
+              const { clientEnv } = await (await import('../load.js')).loadConfig({ file: w.configFile });
+              const keys = Object.keys(clientEnv).sort();
+              const lines: string[] = [];
+              lines.push('// Generated by confkit ws types');
+              lines.push("declare module 'confkit:client' {");
+              lines.push('  const env: {');
+              for (const k of keys) lines.push(`    ${k}: string;`);
+              lines.push('  };');
+              lines.push('  export default env;');
+              lines.push('}');
+              lines.push("declare module '@confkit/next/client' {");
+              lines.push('  const env: {');
+              for (const k of keys) lines.push(`    ${k}: string;`);
+              lines.push('  };');
+              lines.push('  export default env;');
+              lines.push('}');
+              fs.writeFileSync(outFile, lines.join('\n') + '\n', 'utf8');
+            }
+            wrote++;
+            console.log('✔ Wrote', path.relative(w.dir, outFile));
+          });
+        }
+        console.log(c.green(`ws types: wrote ${wrote} file(s)`));
+        return;
+      }
+      console.error(`ws: unknown subcommand '${sub}'. Use 'check' or 'types'.`);
+      process.exitCode = 1;
+      return;
+    }
+
     const { config } = await loadConfig({ file, computeClientEnv: false });
     if (cmd === 'check' || cmd === 'print') {
       const c = colorize();
