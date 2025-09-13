@@ -1,5 +1,12 @@
 # @confkit/vite
 
+## 1.0.0
+
+### Patch Changes
+
+- Updated dependencies [a2f3e7d]
+  - confkit@0.1.0
+
 ## 0.0.2
 
 ### Patch Changes

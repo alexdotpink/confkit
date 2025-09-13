@@ -1,6 +1,6 @@
 {
   "name": "@confkit/vite",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -58,7 +58,7 @@
   },
   "peerDependencies": {
     "vite": ">=4.0.0",
-    "confkit": ">=0.0.2"
+    "confkit": ">=0.1.0"
   },
   "devDependencies": {
     "confkit": "workspace:*"

@@ -1,6 +1,6 @@
 {
   "name": "@confkit/1password",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
@@ -56,7 +56,7 @@
     "url": "https://github.com/sponsors/alexdotpink"
   },
   "peerDependencies": {
-    "confkit": ">=0.0.2"
+    "confkit": ">=0.1.0"
   },
   "dependencies": {
     "@1password/connect": "^1.4.2"
